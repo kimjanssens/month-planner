@@ -1,3 +1,5 @@
+import forms from '@tailwindcss/forms'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   purge: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
@@ -8,5 +10,5 @@ export default {
   variants: {
     extend: {}
   },
-  plugins: []
+  plugins: [forms]
 }
