@@ -1,7 +1,27 @@
 <template>
   <div class="grid grid-cols-3 w-full h-screen">
     <div class="p-8">
-      <div class="text-lg font-medium uppercase">Overview</div>
+      <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
+      <form class="mb-10">
+        <div class="mb-4">
+          <label for="days" class="mr-4">Days:</label>
+          <input type="number" id="days" name="days" v-model="days" />
+        </div>
+        <div>
+          <label for="firstDayOfTheMonth" class="mr-4">First day of the month:</label>
+          <select v-model="firstDayOfTheMonth" id="firstDayOfTheMonth">
+            <option :value="0">Monday</option>
+            <option :value="1">Tuesday</option>
+            <option :value="2">Wednesday</option>
+            <option :value="3">Thursday</option>
+            <option :value="4">Friday</option>
+            <option :value="5">Saturday</option>
+            <option :value="6">Sunday</option>
+          </select>
+        </div>
+      </form>
+
+      <h2 class="text-lg font-medium uppercase mb-4">Overview</h2>
       <ul>
         <li v-for="(employee, i) in employeesWorkingDays" :key="i">
           {{ employee.name }}: {{ employee.days }}
@@ -9,10 +29,23 @@
       </ul>
     </div>
 
-    <div class="col-span-2 grid grid-cols-7 divide-x divide-y">
-      <div v-for="item in month" :key="item.day" class="flex gap-4 p-4 odd:bg-slate-100">
+    <div class="col-span-2 grid grid-cols-7">
+      <div
+        v-for="day in DAYS_OF_THE_WEEK"
+        :key="day"
+        class="text-white bg-slate-800 pl-4 flex items-center"
+      >
+        {{ day.name }}
+      </div>
+
+      <div
+        v-for="item in month"
+        :key="item.day"
+        class="p-4 bg-slate-50 odd:bg-slate-200"
+        :class="{ [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: item.day === 1 }"
+      >
         <div class="font-medium">{{ item.day }}</div>
-        <div class="">
+        <div>
           <ul>
             <li v-for="employee in item.employees" :key="employee">
               {{ employee }}
@@ -25,7 +58,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const EMPLOYEE_STATUS = {
   FULL_TIME: 'full-time',
@@ -44,17 +77,29 @@ const EMPLOYEES = [
   { name: 'Nora', status: EMPLOYEE_STATUS.FULL_TIME }
 ]
 
-const DAYS = 31
+const DAYS_OF_THE_WEEK = {
+  0: { name: 'Monday', tailwind: 'col-start-1' },
+  1: { name: 'Tuesday', tailwind: 'col-start-2' },
+  2: { name: 'Wednesday', tailwind: 'col-start-3' },
+  3: { name: 'Thursday', tailwind: 'col-start-4' },
+  4: { name: 'Friday', tailwind: 'col-start-5' },
+  5: { name: 'Saturday', tailwind: 'col-start-6' },
+  6: { name: 'Sunday', tailwind: 'col-start-7' }
+}
+
 const EMPLOYEES_PER_DAY = 4
+
+const days = ref(31)
+const firstDayOfTheMonth = ref(0)
 
 const month = computed(() => {
   const planning = []
 
-  for (let index = 1; index <= DAYS; index++) {
+  for (let index = 1; index <= days.value; index++) {
     const day = {
       day: index,
       employees: [],
-      isWeekend: index % 7 === 0
+      isWeekend: (index + Number(firstDayOfTheMonth.value)) % 7 === 0
     }
 
     if (day.isWeekend) {
@@ -66,7 +111,7 @@ const month = computed(() => {
       shuffledEmployees.map((employee) => {
         // const isWorking = Math.random() > 0.5
 
-        const averageWorkingDays = Math.round((DAYS / EMPLOYEES.length) * EMPLOYEES_PER_DAY)
+        const averageWorkingDays = Math.round((days.value / EMPLOYEES.length) * EMPLOYEES_PER_DAY)
 
         const isWorking =
           planning.filter((d) => d.employees.includes(employee.name)).length < averageWorkingDays
