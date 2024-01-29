@@ -39,15 +39,15 @@
       </div>
 
       <div
-        v-for="item in month"
-        :key="item.day"
+        v-for="day in month"
+        :key="day.dayNumber"
         class="p-4 bg-slate-50 odd:bg-slate-200"
-        :class="{ [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: item.day === 1 }"
+        :class="{ [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: day.dayNumber === 1 }"
       >
-        <div class="font-medium">{{ item.day }}</div>
+        <div class="font-medium">{{ day.dayNumber }}</div>
         <div>
           <ul>
-            <li v-for="employee in item.employees" :key="employee">
+            <li v-for="employee in day.employees" :key="employee">
               {{ employee }}
             </li>
           </ul>
@@ -97,12 +97,12 @@ const month = computed(() => {
 
   for (let index = 1; index <= days.value; index++) {
     const day = {
-      day: index,
+      dayNumber: index,
       employees: [],
       isWeekend: (index + Number(firstDayOfTheMonth.value)) % 7 === 0
     }
 
-    if (day.isWeekend) {
+    if (day.isWeekend && index > 1) {
       day.employees = [...planning[index - 2].employees]
     } else {
       // Use spread operator to create a new array and not mutate the original one
