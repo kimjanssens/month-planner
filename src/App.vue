@@ -7,7 +7,7 @@
           <label for="days" class="mr-4">Days:</label>
           <input type="number" id="days" name="days" v-model="days" />
         </div>
-        <div>
+        <div class="mb-4">
           <label for="firstDayOfTheMonth" class="mr-4">First day of the month:</label>
           <select v-model="firstDayOfTheMonth" id="firstDayOfTheMonth">
             <option :value="0">Monday</option>
@@ -18,6 +18,10 @@
             <option :value="5">Saturday</option>
             <option :value="6">Sunday</option>
           </select>
+        </div>
+        <div>
+          <label for="slots" class="mr-4"># of shifts:</label>
+          <input type="number" id="slots" name="slots" v-model="slots" />
         </div>
       </form>
 
@@ -66,12 +70,16 @@ const EMPLOYEE_STATUS = {
 }
 
 const EMPLOYEES = [
-  { name: 'Lilian', status: EMPLOYEE_STATUS.PART_TIME },
+  {
+    name: 'Lilian',
+    status: EMPLOYEE_STATUS.PART_TIME,
+    workDays: [2, 3, 4, 9, 10, 11, 16, 17, 18, 23, 24, 25, 30, 31]
+  },
   { name: 'Yasmine', status: EMPLOYEE_STATUS.FULL_TIME },
   { name: 'Fran', status: EMPLOYEE_STATUS.FULL_TIME },
   { name: 'Francoise', status: EMPLOYEE_STATUS.FULL_TIME },
   { name: 'Kelly', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Dina', status: EMPLOYEE_STATUS.PART_TIME },
+  { name: 'Dina', status: EMPLOYEE_STATUS.PART_TIME, workDays: [1, 2, 8] },
   { name: 'Shari', status: EMPLOYEE_STATUS.FULL_TIME },
   { name: 'Dana', status: EMPLOYEE_STATUS.FULL_TIME },
   { name: 'Nora', status: EMPLOYEE_STATUS.FULL_TIME }
@@ -87,13 +95,15 @@ const DAYS_OF_THE_WEEK = {
   6: { name: 'Sunday', tailwind: 'col-start-7' }
 }
 
-const EMPLOYEES_PER_DAY = 4
-
 const days = ref(31)
 const firstDayOfTheMonth = ref(0)
+const slots = ref(4)
 
 const month = computed(() => {
   const planning = []
+  // Use spread operator to create a new array and not mutate the original one
+  const partTimeEmployees = [...EMPLOYEES].filter((employee) => employee.workDays)
+  const fullTimeEmployees = [...EMPLOYEES].filter((employee) => !employee.workDays)
 
   for (let index = 1; index <= days.value; index++) {
     const day = {
@@ -105,19 +115,34 @@ const month = computed(() => {
     if (day.isWeekend && index > 1) {
       day.employees = [...planning[index - 2].employees]
     } else {
-      // Use spread operator to create a new array and not mutate the original one
-      const shuffledEmployees = shuffle([...EMPLOYEES])
+      //
+      // Shuffle the array of full-time employees to make the result more random
+      const shuffledEmployees = [...partTimeEmployees, ...shuffle(fullTimeEmployees)]
 
       shuffledEmployees.map((employee) => {
-        // const isWorking = Math.random() > 0.5
+        let isWorking = false
 
-        const averageWorkingDays = Math.round((days.value / EMPLOYEES.length) * EMPLOYEES_PER_DAY)
+        // Calculate the average working days for full-time employees
+        const averageWorkingDays = Math.ceil(
+          (days.value * slots.value - totalPartTimeWorkingDays.value) / fullTimeEmployees.length
+        )
 
-        const isWorking =
+        // Makee sure a full-time employee doesn't work more days than the average
+        isWorking =
           planning.filter((d) => d.employees.includes(employee.name)).length < averageWorkingDays
 
+        // First check if employee has workDays because this is only for part-time employees
+        // Then check if the current day is included in the workDays
+        if (employee?.workDays?.length > 0) {
+          if (employee.workDays.includes(index)) {
+            isWorking = true
+          } else {
+            isWorking = false
+          }
+        }
+
         if (
-          day.employees.length < EMPLOYEES_PER_DAY &&
+          day.employees.length < slots.value &&
           !day.employees.includes(employee.name) &&
           isWorking
         ) {
@@ -130,6 +155,16 @@ const month = computed(() => {
   }
 
   return planning
+})
+
+const totalPartTimeWorkingDays = computed(() => {
+  let count = 0
+
+  EMPLOYEES.map((employee) => {
+    count += employee.workDays ? employee.workDays?.length : 0
+  })
+
+  return count
 })
 
 const employeesWorkingDays = computed(() => {
