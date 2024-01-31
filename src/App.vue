@@ -35,8 +35,33 @@
 
       <h2 class="text-lg font-medium uppercase mb-4">Overview</h2>
       <ul>
-        <li v-for="(employee, i) in employeesWorkingDays" :key="i">
-          {{ employee.name }}: {{ employee.days }}
+        <li
+          v-for="(employee, i) in employeesWorkingDays"
+          :key="i"
+          class="grid grid-cols-5 p-2 bg-slate-50 odd:bg-slate-200"
+        >
+          <div>{{ employee.name }}:</div>
+          <div>
+            {{ employee.days }}
+          </div>
+          <div class="col-span-3 flex justify-end">
+            <button type="button" @click="setActiveUser(employee)">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="{1.5}"
+                stroke="currentColor"
+                class="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+                />
+              </svg>
+            </button>
+          </div>
         </li>
       </ul>
     </div>
@@ -109,6 +134,7 @@ const days = ref(31)
 const firstDayOfTheMonth = ref(0)
 const slots = ref(4)
 const refreshTable = ref(0)
+const activeUser = ref(null)
 
 const month = computed(() => {
   const planning = []
@@ -207,6 +233,10 @@ const shuffle = (array) => {
     ;[array[i], array[j]] = [array[j], array[i]]
   }
   return array
+}
+
+const setActiveUser = (employee) => {
+  activeUser.value = employee
 }
 </script>
 
