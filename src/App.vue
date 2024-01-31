@@ -2,14 +2,14 @@
   <div class="grid grid-cols-3 w-full h-screen">
     <div class="p-8">
       <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
-      <form class="mb-10">
-        <div class="mb-4">
-          <label for="days" class="mr-4">Days:</label>
-          <input type="number" id="days" name="days" v-model="days" />
+      <form class="mb-20">
+        <div class="flex items-center gap-4 mb-4">
+          <label for="days" class="flex-shrink-0">Days:</label>
+          <input type="number" id="days" name="days" v-model="days" class="w-full" />
         </div>
-        <div class="mb-4">
-          <label for="firstDayOfTheMonth" class="mr-4">First day of the month:</label>
-          <select v-model="firstDayOfTheMonth" id="firstDayOfTheMonth">
+        <div class="flex items-center gap-4 mb-4">
+          <label for="firstDayOfTheMonth" class="flex-shrink-0">First day of the month:</label>
+          <select v-model="firstDayOfTheMonth" id="firstDayOfTheMonth" class="w-full">
             <option :value="0">Monday</option>
             <option :value="1">Tuesday</option>
             <option :value="2">Wednesday</option>
@@ -19,10 +19,18 @@
             <option :value="6">Sunday</option>
           </select>
         </div>
-        <div>
-          <label for="slots" class="mr-4"># of shifts:</label>
-          <input type="number" id="slots" name="slots" v-model="slots" />
+        <div class="flex items-center gap-4 mb-4">
+          <label for="slots" class="flex-shrink-0"># of shifts:</label>
+          <input type="number" id="slots" name="slots" v-model="slots" class="w-full" />
         </div>
+
+        <button
+          type="button"
+          @click="refreshTable++"
+          class="flex items-center justify-center w-full py-3 bg-black text-white uppercase text-sm tracking-wider font-medium"
+        >
+          Calculate
+        </button>
       </form>
 
       <h2 class="text-lg font-medium uppercase mb-4">Overview</h2>
@@ -45,10 +53,12 @@
       <div
         v-for="day in month"
         :key="day.dayNumber"
-        class="p-4 bg-slate-50 odd:bg-slate-200"
+        class="p-4 bg-slate-50 odd:bg-slate-200 relative"
         :class="{ [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: day.dayNumber === 1 }"
       >
-        <div class="font-medium">{{ day.dayNumber }}</div>
+        <div class="font-medium text-7xl opacity-20 absolute right-0 bottom-0">
+          {{ day.dayNumber }}
+        </div>
         <div>
           <ul>
             <li v-for="employee in day.employees" :key="employee">
@@ -98,9 +108,12 @@ const DAYS_OF_THE_WEEK = {
 const days = ref(31)
 const firstDayOfTheMonth = ref(0)
 const slots = ref(4)
+const refreshTable = ref(0)
 
 const month = computed(() => {
   const planning = []
+  refreshTable.value
+
   // Use spread operator to create a new array and not mutate the original one
   const partTimeEmployees = [...EMPLOYEES].filter((employee) => employee.workDays)
   const fullTimeEmployees = [...EMPLOYEES].filter((employee) => !employee.workDays)
