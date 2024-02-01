@@ -46,7 +46,7 @@
         >
           <div>{{ employee.name }}:</div>
           <div>
-            {{ employee.days }}
+            {{ employee.days.length }}
           </div>
           <div class="col-span-3 flex justify-end">
             <svg
@@ -91,7 +91,8 @@
         <div
           class="font-medium text-7xl opacity-20 absolute right-0 bottom-0"
           :class="{
-            'text-green-400 opacity-40': day.employees.includes(activeUser?.name)
+            'text-green-400 opacity-40': day.employees.includes(activeUser?.name),
+            'text-red-400 opacity-40': employees.find((e) => e.holidays.includes(day.dayNumber))
           }"
         >
           {{ day.dayNumber }}
@@ -168,7 +169,12 @@ const month = computed(() => {
       shuffledEmployees.map((employee) => {
         let isWorking = false
 
-        // Calculate the average working days for full-time employees
+        // If an employee has a holiday, skip him
+        if (employee.holidays.includes(index)) {
+          return
+        }
+
+        // Calculate the average working days for employees
         const averageWorkingDays = Math.ceil(
           (days.value * slots.value - totalPartTimeWorkingDays.value) / fullTimeEmployees.length
         )
@@ -217,22 +223,12 @@ const employeesWorkingDays = computed(() => {
   return employees.value.map((employee) => {
     return {
       ...employee,
-      days: countWorkingDays(employee)
+      days: month.value
+        .filter((day) => day.employees.includes(employee.name))
+        .map((d) => d.dayNumber)
     }
   })
 })
-
-const countWorkingDays = (employee) => {
-  let count = 0
-
-  month.value.map((day) => {
-    if (day.employees.includes(employee.name)) {
-      count++
-    }
-  })
-
-  return count
-}
 
 const shuffle = (array) => {
   for (let i = array.length - 1; i > 0; i--) {
@@ -261,8 +257,14 @@ const toggleActiveUserWorkday = (day) => {
 
     if (employee.workDays.includes(day.dayNumber)) {
       employee.workDays = employee.workDays.filter((d) => d !== day.dayNumber)
+      employee.holidays.push(day.dayNumber)
+    } else if (employee.holidays.includes(day.dayNumber)) {
+      employee.holidays = employee.holidays.filter((d) => d !== day.dayNumber)
     } else {
-      employee.workDays.push(day.dayNumber)
+      employee.workDays = [
+        ...employeesWorkingDays.value.find((e) => e.name === activeUser.value.name).days,
+        day.dayNumber
+      ]
     }
 
     return employee
