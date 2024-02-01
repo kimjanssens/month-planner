@@ -38,29 +38,32 @@
         <li
           v-for="(employee, i) in employeesWorkingDays"
           :key="i"
-          class="grid grid-cols-5 p-2 bg-slate-50 odd:bg-slate-200"
+          class="grid grid-cols-5 p-2 bg-slate-50 odd:bg-slate-200 cursor-pointer hover:bg-blue-200"
+          :class="{
+            'border-l-4 border-l-blue-600 text-blue-600': employee.name === activeUser?.name
+          }"
+          @click="setActiveUser(employee)"
         >
           <div>{{ employee.name }}:</div>
           <div>
             {{ employee.days }}
           </div>
           <div class="col-span-3 flex justify-end">
-            <button type="button" @click="setActiveUser(employee)">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="{1.5}"
-                stroke="currentColor"
-                class="w-6 h-6"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
-                />
-              </svg>
-            </button>
+            <svg
+              v-if="employee.workDays.length > 0 || employee.holidays.length > 0"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="{1.5}"
+              stroke="currentColor"
+              class="w-6 h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+              />
+            </svg>
           </div>
         </li>
       </ul>
@@ -79,9 +82,18 @@
         v-for="day in month"
         :key="day.dayNumber"
         class="p-4 bg-slate-50 odd:bg-slate-200 relative"
-        :class="{ [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: day.dayNumber === 1 }"
+        :class="{
+          [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: day.dayNumber === 1,
+          'cursor-pointer': activeUser
+        }"
+        @click="toggleActiveUserWorkday(day)"
       >
-        <div class="font-medium text-7xl opacity-20 absolute right-0 bottom-0">
+        <div
+          class="font-medium text-7xl opacity-20 absolute right-0 bottom-0"
+          :class="{
+            'text-green-400 opacity-40': day.employees.includes(activeUser?.name)
+          }"
+        >
           {{ day.dayNumber }}
         </div>
         <div>
@@ -99,26 +111,21 @@
 <script setup>
 import { computed, ref } from 'vue'
 
-const EMPLOYEE_STATUS = {
-  FULL_TIME: 'full-time',
-  PART_TIME: 'part-time'
-}
-
-const EMPLOYEES = [
+const employees = ref([
   {
     name: 'Lilian',
-    status: EMPLOYEE_STATUS.PART_TIME,
-    workDays: [2, 3, 4, 9, 10, 11, 16, 17, 18, 23, 24, 25, 30, 31]
+    workDays: [2, 3, 4, 9, 10, 11, 16, 17, 18, 23, 24, 25, 30, 31],
+    holidays: []
   },
-  { name: 'Yasmine', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Fran', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Francoise', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Kelly', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Dina', status: EMPLOYEE_STATUS.PART_TIME, workDays: [1, 2, 8] },
-  { name: 'Shari', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Dana', status: EMPLOYEE_STATUS.FULL_TIME },
-  { name: 'Nora', status: EMPLOYEE_STATUS.FULL_TIME }
-]
+  { name: 'Yasmine', workDays: [], holidays: [] },
+  { name: 'Fran', workDays: [], holidays: [] },
+  { name: 'Francoise', workDays: [], holidays: [] },
+  { name: 'Kelly', workDays: [], holidays: [] },
+  { name: 'Dina', workDays: [], holidays: [] },
+  { name: 'Shari', workDays: [], holidays: [] },
+  { name: 'Dana', workDays: [], holidays: [] },
+  { name: 'Nora', workDays: [], holidays: [] }
+])
 
 const DAYS_OF_THE_WEEK = {
   0: { name: 'Monday', tailwind: 'col-start-1' },
@@ -141,8 +148,8 @@ const month = computed(() => {
   refreshTable.value
 
   // Use spread operator to create a new array and not mutate the original one
-  const partTimeEmployees = [...EMPLOYEES].filter((employee) => employee.workDays)
-  const fullTimeEmployees = [...EMPLOYEES].filter((employee) => !employee.workDays)
+  const partTimeEmployees = employees.value.filter((employee) => employee.workDays.length > 0)
+  const fullTimeEmployees = employees.value.filter((employee) => !employee.workDays.length)
 
   for (let index = 1; index <= days.value; index++) {
     const day = {
@@ -172,7 +179,7 @@ const month = computed(() => {
 
         // First check if employee has workDays because this is only for part-time employees
         // Then check if the current day is included in the workDays
-        if (employee?.workDays?.length > 0) {
+        if (employee.workDays.length > 0) {
           if (employee.workDays.includes(index)) {
             isWorking = true
           } else {
@@ -199,17 +206,17 @@ const month = computed(() => {
 const totalPartTimeWorkingDays = computed(() => {
   let count = 0
 
-  EMPLOYEES.map((employee) => {
-    count += employee.workDays ? employee.workDays?.length : 0
+  employees.value.map((employee) => {
+    count += employee.workDays ? employee.workDays.length : 0
   })
 
   return count
 })
 
 const employeesWorkingDays = computed(() => {
-  return EMPLOYEES.map((employee) => {
+  return employees.value.map((employee) => {
     return {
-      name: employee.name,
+      ...employee,
       days: countWorkingDays(employee)
     }
   })
@@ -236,7 +243,30 @@ const shuffle = (array) => {
 }
 
 const setActiveUser = (employee) => {
+  if (activeUser.value?.name === employee.name) {
+    activeUser.value = null
+    return
+  }
+
   activeUser.value = employee
+}
+
+const toggleActiveUserWorkday = (day) => {
+  if (!activeUser.value) return
+
+  employees.value = employees.value.map((employee) => {
+    if (employee.name !== activeUser.value.name) {
+      return employee
+    }
+
+    if (employee.workDays.includes(day.dayNumber)) {
+      employee.workDays = employee.workDays.filter((d) => d !== day.dayNumber)
+    } else {
+      employee.workDays.push(day.dayNumber)
+    }
+
+    return employee
+  })
 }
 </script>
 
