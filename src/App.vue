@@ -78,39 +78,25 @@
         {{ day.name }}
       </div>
 
-      <div
+      <calendar-day
         v-for="day in month"
         :key="day.dayNumber"
-        class="p-4 bg-slate-50 odd:bg-slate-200 relative"
-        :class="{
-          [DAYS_OF_THE_WEEK[firstDayOfTheMonth].tailwind]: day.dayNumber === 1,
-          'cursor-pointer': activeUser
-        }"
-        @click="toggleActiveUserWorkday(day)"
-      >
-        <div
-          class="font-medium text-7xl opacity-20 absolute right-0 bottom-0"
-          :class="{
-            'text-green-400 opacity-40': day.employees.includes(activeUser?.name),
-            'text-red-400 opacity-40': employees.find((e) => e.holidays.includes(day.dayNumber))
-          }"
-        >
-          {{ day.dayNumber }}
-        </div>
-        <div>
-          <ul>
-            <li v-for="employee in day.employees" :key="employee">
-              {{ employee }}
-            </li>
-          </ul>
-        </div>
-      </div>
+        :day="day"
+        :days-of-the-week="DAYS_OF_THE_WEEK"
+        :first-day-of-the-month="firstDayOfTheMonth"
+        :active-user="activeUser"
+        :employees="employees"
+        @selected-day="toggleActiveUserWorkday"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
+
+import CalendarDay from '@/components/CalendarDay.vue'
+import { DAYS_OF_THE_WEEK } from '@/utils/constants'
 
 const employees = ref([
   {
@@ -127,16 +113,6 @@ const employees = ref([
   { name: 'Dana', workDays: [], holidays: [] },
   { name: 'Nora', workDays: [], holidays: [] }
 ])
-
-const DAYS_OF_THE_WEEK = {
-  0: { name: 'Monday', tailwind: 'col-start-1' },
-  1: { name: 'Tuesday', tailwind: 'col-start-2' },
-  2: { name: 'Wednesday', tailwind: 'col-start-3' },
-  3: { name: 'Thursday', tailwind: 'col-start-4' },
-  4: { name: 'Friday', tailwind: 'col-start-5' },
-  5: { name: 'Saturday', tailwind: 'col-start-6' },
-  6: { name: 'Sunday', tailwind: 'col-start-7' }
-}
 
 const days = ref(31)
 const firstDayOfTheMonth = ref(0)
