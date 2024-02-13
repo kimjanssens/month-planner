@@ -11,7 +11,12 @@
       class="font-medium text-7xl opacity-20 absolute right-0 bottom-0"
       :class="{
         'text-green-400 opacity-40': day.employees.includes(activeUser?.name),
-        'text-red-400 opacity-40': employees.find((e) => e.holidays.includes(day.dayNumber))
+        'text-red-400 opacity-40': employees.find(
+          (e) =>
+            e.name === activeUser?.name &&
+            e.holidays.includes(day.dayNumber) &&
+            !e.workingDays.includes(day.dayNumber)
+        )
       }"
     >
       {{ day.dayNumber }}
