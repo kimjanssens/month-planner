@@ -2,7 +2,7 @@
   <div
     class="p-4 bg-slate-50 odd:bg-slate-200 relative"
     :class="{
-      [daysOfTheWeek[firstDayOfTheMonth].tailwind]: day.dayNumber === 1,
+      [daysOfTheWeek[day.dayOfTheWeek]?.tailwind]: day.dayNumber === 1,
       'cursor-pointer': activeUser
     }"
     @click="$emit('selected-day', day)"
@@ -15,7 +15,7 @@
           (e) =>
             e.name === activeUser?.name &&
             e.holidays.includes(day.dayNumber) &&
-            !e.workingDays.includes(day.dayNumber)
+            !e.workDays.includes(day.dayNumber)
         )
       }"
     >
@@ -40,10 +40,6 @@ defineProps({
   },
   daysOfTheWeek: {
     type: Object,
-    required: true
-  },
-  firstDayOfTheMonth: {
-    type: Number,
     required: true
   },
   activeUser: {

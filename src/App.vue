@@ -4,21 +4,17 @@
       <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
       <form class="mb-20">
         <div class="flex items-center gap-4 mb-4">
-          <label for="days" class="flex-shrink-0">Days:</label>
-          <input type="number" id="days" name="days" v-model="days" class="w-full" />
+          <label for="datepicker" class="flex-shrink-0">Datum:</label>
+          <input
+            type="month"
+            id="datepicker"
+            name="datepicker"
+            lang="nl"
+            v-model="datepicker"
+            class="w-full"
+          />
         </div>
-        <div class="flex items-center gap-4 mb-4">
-          <label for="firstDayOfTheMonth" class="flex-shrink-0">First day of the month:</label>
-          <select v-model="firstDayOfTheMonth" id="firstDayOfTheMonth" class="w-full">
-            <option :value="0">Monday</option>
-            <option :value="1">Tuesday</option>
-            <option :value="2">Wednesday</option>
-            <option :value="3">Thursday</option>
-            <option :value="4">Friday</option>
-            <option :value="5">Saturday</option>
-            <option :value="6">Sunday</option>
-          </select>
-        </div>
+
         <div class="flex items-center gap-4 mb-4">
           <label for="slots" class="flex-shrink-0"># of shifts:</label>
           <input type="number" id="slots" name="slots" v-model="slots" class="w-full" />
@@ -83,7 +79,6 @@
         :key="day.dayNumber"
         :day="day"
         :days-of-the-week="DAYS_OF_THE_WEEK"
-        :first-day-of-the-month="firstDayOfTheMonth"
         :active-user="activeUser"
         :employees="employees"
         @selected-day="toggleActiveUserWorkday"
@@ -99,11 +94,7 @@ import CalendarDay from '@/components/CalendarDay.vue'
 import { DAYS_OF_THE_WEEK } from '@/utils/constants'
 
 const employees = ref([
-  {
-    name: 'Lilian',
-    workDays: [2, 3, 4, 9, 10, 11, 16, 17, 18, 23, 24, 25, 30, 31],
-    holidays: []
-  },
+  { name: 'Lilian', workDays: [], holidays: [] },
   { name: 'Yasmine', workDays: [], holidays: [] },
   { name: 'Fran', workDays: [], holidays: [] },
   { name: 'Francoise', workDays: [], holidays: [] },
@@ -114,11 +105,24 @@ const employees = ref([
   { name: 'Nora', workDays: [], holidays: [] }
 ])
 
-const days = ref(31)
-const firstDayOfTheMonth = ref(0)
+const datepicker = ref(
+  `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`
+)
 const slots = ref(4)
 const refreshTable = ref(0)
 const activeUser = ref(null)
+
+const days = computed(() => {
+  const days = []
+  const firstDateOfTheMonth = new Date(datepicker.value)
+
+  while (firstDateOfTheMonth.getMonth() === new Date(datepicker.value).getMonth()) {
+    days.push(new Date(firstDateOfTheMonth))
+    firstDateOfTheMonth.setDate(firstDateOfTheMonth.getDate() + 1)
+  }
+
+  return days
+})
 
 const month = computed(() => {
   const planning = []
@@ -128,17 +132,18 @@ const month = computed(() => {
   const partTimeEmployees = employees.value.filter((employee) => employee.workDays.length > 0)
   const fullTimeEmployees = employees.value.filter((employee) => !employee.workDays.length)
 
-  for (let index = 1; index <= days.value; index++) {
+  days.value.map((d) => {
     const day = {
-      dayNumber: index,
+      dayNumber: d.getDate(),
       employees: [],
-      isWeekend: (index + Number(firstDayOfTheMonth.value)) % 7 === 0
+      dayOfTheWeek: d.getDay(),
+      isSunday: d.getDay() % 7 === 0,
+      isWeekend: d.getDay() % 6 === 0 || d.getDay() % 7 === 0
     }
 
-    if (day.isWeekend && index > 1) {
-      day.employees = [...planning[index - 2].employees]
+    if (day.isSunday && day.dayNumber > 1) {
+      day.employees = [...planning[day.dayNumber - 2].employees]
     } else {
-      //
       // Shuffle the array of full-time employees to make the result more random
       const shuffledEmployees = [...partTimeEmployees, ...shuffle(fullTimeEmployees)]
 
@@ -146,13 +151,14 @@ const month = computed(() => {
         let isWorking = false
 
         // If an employee has a holiday, skip him
-        if (employee.holidays.includes(index)) {
+        if (employee.holidays.includes(day.dayNumber)) {
           return
         }
 
         // Calculate the average working days for employees
         const averageWorkingDays = Math.ceil(
-          (days.value * slots.value - totalPartTimeWorkingDays.value) / fullTimeEmployees.length
+          (days.value.length * slots.value - totalPartTimeWorkingDays.value) /
+            fullTimeEmployees.length
         )
 
         // Makee sure a full-time employee doesn't work more days than the average
@@ -162,7 +168,7 @@ const month = computed(() => {
         // First check if employee has workDays because this is only for part-time employees
         // Then check if the current day is included in the workDays
         if (employee.workDays.length > 0) {
-          if (employee.workDays.includes(index)) {
+          if (employee.workDays.includes(day.dayNumber)) {
             isWorking = true
           } else {
             isWorking = false
@@ -170,7 +176,7 @@ const month = computed(() => {
         }
 
         if (
-          day.employees.length < slots.value &&
+          day.employees.length < (day.isWeekend ? 4 : slots.value) &&
           !day.employees.includes(employee.name) &&
           isWorking
         ) {
@@ -180,7 +186,7 @@ const month = computed(() => {
     }
 
     planning.push(day)
-  }
+  })
 
   return planning
 })
@@ -237,10 +243,8 @@ const toggleActiveUserWorkday = (day) => {
     } else if (employee.holidays.includes(day.dayNumber)) {
       employee.holidays = employee.holidays.filter((d) => d !== day.dayNumber)
     } else {
-      employee.workDays = [
-        ...employeesWorkingDays.value.find((e) => e.name === activeUser.value.name).days,
-        day.dayNumber
-      ]
+      employee.workDays.push(day.dayNumber)
+      // ...employeesWorkingDays.value.find((e) => e.name === activeUser.value.name).days,
     }
 
     return employee
