@@ -105,6 +105,8 @@ const employees = ref([
   { name: 'Nora', workDays: [], holidays: [] }
 ])
 
+// Default value for input[type="month"]
+// Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 10
 const datepicker = ref(
   `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`
 )
@@ -112,6 +114,7 @@ const slots = ref(4)
 const refreshTable = ref(0)
 const activeUser = ref(null)
 
+// Get the days of the selected month.
 const days = computed(() => {
   const days = []
   const firstDateOfTheMonth = new Date(datepicker.value)
@@ -124,6 +127,8 @@ const days = computed(() => {
   return days
 })
 
+// Create a new array of objects with the days of the month and the employees working on that day.
+// This is the main function that calculates the planning
 const month = computed(() => {
   const planning = []
   refreshTable.value
@@ -143,8 +148,10 @@ const month = computed(() => {
 
     if (day.isSunday && day.dayNumber > 1) {
       // Copy the employees from saturday to sunday.
+      // Sunday must have the same employees as Saturday
       day.employees = [...planning[day.dayNumber - 2].employees]
     } else {
+      // Part-time employees are added first to the planning
       // Shuffle the array of full-time employees to make the result more random
       const shuffledEmployees = [...partTimeEmployees, ...shuffle(fullTimeEmployees)]
 
@@ -166,7 +173,7 @@ const month = computed(() => {
         isWorking =
           planning.filter((d) => d.employees.includes(employee.name)).length < averageWorkingDays
 
-        // First check if employee has workDays because this is only for part-time employees
+        // First check if employee has workDays because this is only for part-time employees.
         // Then check if the current day is included in the workDays
         if (employee.workDays.length > 0) {
           if (employee.workDays.includes(day.dayNumber)) {
@@ -176,6 +183,7 @@ const month = computed(() => {
           }
         }
 
+        // If the day is a weekend, only add 4 employees
         if (
           day.employees.length < (day.isWeekend ? 4 : slots.value) &&
           !day.employees.includes(employee.name) &&
@@ -230,6 +238,9 @@ const setActiveUser = (employee) => {
   activeUser.value = employee
 }
 
+// First click adds the employee to the day.
+// Second click removes the employee from the day.
+// Third click resets  the day.
 const toggleActiveUserWorkday = (day) => {
   if (!activeUser.value) return
 
@@ -245,12 +256,9 @@ const toggleActiveUserWorkday = (day) => {
       employee.holidays = employee.holidays.filter((d) => d !== day.dayNumber)
     } else {
       employee.workDays.push(day.dayNumber)
-      // ...employeesWorkingDays.value.find((e) => e.name === activeUser.value.name).days,
     }
 
     return employee
   })
 }
 </script>
-
-<style scoped lang="scss"></style>

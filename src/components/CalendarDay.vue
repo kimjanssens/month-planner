@@ -54,5 +54,3 @@ defineProps({
 
 defineEmits(['selected-day'])
 </script>
-
-<style lang="scss" scoped></style>
