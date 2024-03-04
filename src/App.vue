@@ -2,32 +2,8 @@
   <div class="grid grid-cols-3 w-full h-screen">
     <div class="p-8">
       <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
-      <form class="mb-20">
-        <div class="flex items-center gap-4 mb-4">
-          <label for="datepicker" class="flex-shrink-0">Datum:</label>
-          <input
-            type="month"
-            id="datepicker"
-            name="datepicker"
-            lang="nl"
-            v-model="datepicker"
-            class="w-full"
-          />
-        </div>
 
-        <div class="flex items-center gap-4 mb-4">
-          <label for="slots" class="flex-shrink-0"># of shifts:</label>
-          <input type="number" id="slots" name="slots" v-model="slots" class="w-full" />
-        </div>
-
-        <button
-          type="button"
-          @click="refreshTable++"
-          class="flex items-center justify-center w-full py-3 bg-black text-white uppercase text-sm tracking-wider font-medium"
-        >
-          Calculate
-        </button>
-      </form>
+      <calendar-form v-model="form" class="mb-20" />
 
       <h2 class="text-lg font-medium uppercase mb-4">Overview</h2>
       <ul>
@@ -88,9 +64,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 
 import CalendarDay from '@/components/CalendarDay.vue'
+import CalendarForm from '@/components/CalendarForm.vue'
 import { DAYS_OF_THE_WEEK } from '@/utils/constants'
 
 const employees = ref([
@@ -105,21 +82,21 @@ const employees = ref([
   { name: 'Nora', workDays: [], holidays: [] }
 ])
 
-// Default value for input[type="month"]
-// Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 10
-const datepicker = ref(
-  `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`
-)
-const slots = ref(4)
+const form = reactive({
+  // Default value for input[type="month"]
+  // Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 10
+  datepicker: `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`,
+  slots: 4
+})
 const refreshTable = ref(0)
 const activeUser = ref(null)
 
 // Get the days of the selected month.
 const days = computed(() => {
   const days = []
-  const firstDateOfTheMonth = new Date(datepicker.value)
+  const firstDateOfTheMonth = new Date(form.datepicker)
 
-  while (firstDateOfTheMonth.getMonth() === new Date(datepicker.value).getMonth()) {
+  while (firstDateOfTheMonth.getMonth() === new Date(form.datepicker).getMonth()) {
     days.push(new Date(firstDateOfTheMonth))
     firstDateOfTheMonth.setDate(firstDateOfTheMonth.getDate() + 1)
   }
@@ -165,7 +142,7 @@ const month = computed(() => {
 
         // Calculate the average working days for employees
         const averageWorkingDays = Math.ceil(
-          (days.value.length * slots.value - totalPartTimeWorkingDays.value) /
+          (days.value.length * form.slots - totalPartTimeWorkingDays.value) /
             fullTimeEmployees.length
         )
 
@@ -185,7 +162,7 @@ const month = computed(() => {
 
         // If the day is a weekend, only add 4 employees
         if (
-          day.employees.length < (day.isWeekend ? 4 : slots.value) &&
+          day.employees.length < (day.isWeekend ? 4 : form.slots) &&
           !day.employees.includes(employee.name) &&
           isWorking
         ) {
