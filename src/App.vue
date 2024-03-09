@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 import CalendarDay from '@/components/CalendarDay.vue'
 import CalendarForm from '@/components/CalendarForm.vue'
@@ -227,4 +227,18 @@ const toggleActiveUserWorkday = (day) => {
     return employee
   })
 }
+
+onMounted(() => {
+  if (localStorage.getItem('calendarEmployees')) {
+    form.employees = JSON.parse(localStorage.getItem('calendarEmployees'))
+  }
+})
+
+watch(
+  () => form.employees,
+  (employees) => {
+    localStorage.setItem('calendarEmployees', JSON.stringify(employees))
+  },
+  { deep: true }
+)
 </script>
