@@ -56,7 +56,7 @@
         :day="day"
         :days-of-the-week="DAYS_OF_THE_WEEK"
         :active-user="activeUser"
-        :employees="employees"
+        :employees="form.employees"
         @selected-day="toggleActiveUserWorkday"
       />
     </div>
@@ -70,23 +70,12 @@ import CalendarDay from '@/components/CalendarDay.vue'
 import CalendarForm from '@/components/CalendarForm.vue'
 import { DAYS_OF_THE_WEEK } from '@/utils/constants'
 
-const employees = ref([
-  { name: 'Lilian', workDays: [], holidays: [] },
-  { name: 'Yasmine', workDays: [], holidays: [] },
-  { name: 'Fran', workDays: [], holidays: [] },
-  { name: 'Francoise', workDays: [], holidays: [] },
-  { name: 'Kelly', workDays: [], holidays: [] },
-  { name: 'Dina', workDays: [], holidays: [] },
-  { name: 'Shari', workDays: [], holidays: [] },
-  { name: 'Dana', workDays: [], holidays: [] },
-  { name: 'Nora', workDays: [], holidays: [] }
-])
-
 const form = reactive({
   // Default value for input[type="month"]
   // Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 10
   datepicker: `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`,
-  slots: 4
+  slots: 4,
+  employees: []
 })
 const refreshTable = ref(0)
 const activeUser = ref(null)
@@ -111,9 +100,9 @@ const month = computed(() => {
   refreshTable.value
 
   // Use spread operator to create a new array and not mutate the original one
-  const partTimeEmployees = employees.value.filter((employee) => employee.workDays.length > 0)
-  const fullTimeEmployees = employees.value.filter((employee) => !employee.workDays.length)
-  
+  const partTimeEmployees = form.employees.filter((employee) => employee.workDays.length > 0)
+  const fullTimeEmployees = form.employees.filter((employee) => !employee.workDays.length)
+
   days.value.map((d) => {
     const day = {
       dayNumber: d.getDate(),
@@ -180,7 +169,7 @@ const month = computed(() => {
 const totalPartTimeWorkingDays = computed(() => {
   let count = 0
 
-  employees.value.map((employee) => {
+  form.employees.map((employee) => {
     count += employee.workDays ? employee.workDays.length : 0
   })
 
@@ -188,7 +177,7 @@ const totalPartTimeWorkingDays = computed(() => {
 })
 
 const employeesWorkingDays = computed(() => {
-  return employees.value.map((employee) => {
+  return form.employees.map((employee) => {
     return {
       ...employee,
       days: month.value
@@ -221,7 +210,7 @@ const setActiveUser = (employee) => {
 const toggleActiveUserWorkday = (day) => {
   if (!activeUser.value) return
 
-  employees.value = employees.value.map((employee) => {
+  form.employees = form.employees.map((employee) => {
     if (employee.name !== activeUser.value.name) {
       return employee
     }

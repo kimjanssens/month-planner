@@ -17,6 +17,22 @@
       <input type="number" id="slots" name="slots" v-model="model.slots" class="w-full" />
     </div>
 
+    <div class="flex items-center gap-4 mb-4">
+      <label for="employees" class="flex-shrink-0">Employees:</label>
+      <multiselect
+        v-model="model.employees"
+        :options="options"
+        :multiple="true"
+        :close-on-select="false"
+        :taggable="true"
+        @tag="addEmployee"
+        tag-placeholder="Add to employees"
+        placeholder="Type to add employee"
+        id="employees"
+        label="name"
+      ></multiselect>
+    </div>
+
     <button
       type="button"
       @click="refreshTable++"
@@ -28,7 +44,22 @@
 </template>
 
 <script setup>
-const model = defineModel()
-</script>
+import Multiselect from 'vue-multiselect'
+import { ref } from 'vue'
 
-<style lang="scss" scoped></style>
+const model = defineModel()
+const options = ref([])
+
+const addEmployee = (newEmployee) => {
+  model.value.employees.push({
+    name: newEmployee,
+    workDays: [],
+    holidays: []
+  })
+  options.value.push({
+    name: newEmployee,
+    workDays: [],
+    holidays: []
+  })
+}
+</script>
