@@ -30,6 +30,7 @@
         placeholder="Type to add employee"
         id="employees"
         label="name"
+        track-by="name"
       ></multiselect>
     </div>
 
