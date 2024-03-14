@@ -36,7 +36,7 @@
 
     <button
       type="button"
-      @click="refreshTable++"
+      @click="emit('calculate')"
       class="flex items-center justify-center w-full py-3 bg-black text-white uppercase text-sm tracking-wider font-medium"
     >
       Calculate
@@ -47,6 +47,8 @@
 <script setup>
 import Multiselect from 'vue-multiselect'
 import { ref } from 'vue'
+
+const emit = defineEmits(['calculate'])
 
 const model = defineModel()
 const options = ref([])

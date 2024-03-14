@@ -3,7 +3,7 @@
     <div class="p-8">
       <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
 
-      <calendar-form v-model="form" class="mb-20" />
+      <calendar-form v-model="form" @calculate="refreshTable++" class="mb-20" />
 
       <h2 class="text-lg font-medium uppercase mb-4">Overview</h2>
       <ul>
