@@ -131,7 +131,7 @@ const month = computed(() => {
   // Use spread operator to create a new array and not mutate the original one
   const partTimeEmployees = employees.value.filter((employee) => employee.workDays.length > 0)
   const fullTimeEmployees = employees.value.filter((employee) => !employee.workDays.length)
-
+  
   days.value.map((d) => {
     const day = {
       dayNumber: d.getDate(),
@@ -142,6 +142,7 @@ const month = computed(() => {
     }
 
     if (day.isSunday && day.dayNumber > 1) {
+      // Copy the employees from saturday to sunday.
       day.employees = [...planning[day.dayNumber - 2].employees]
     } else {
       // Shuffle the array of full-time employees to make the result more random
@@ -161,7 +162,7 @@ const month = computed(() => {
             fullTimeEmployees.length
         )
 
-        // Makee sure a full-time employee doesn't work more days than the average
+        // Make sure a full-time employee doesn't work more days than the average
         isWorking =
           planning.filter((d) => d.employees.includes(employee.name)).length < averageWorkingDays
 
