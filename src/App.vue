@@ -1,10 +1,49 @@
 <template>
   <div class="grid grid-cols-3 w-full h-screen">
-    <div class="p-8">
-      <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
-      <calendar-form v-model="form" @calculate="refreshTable++" class="mb-20" />
+    <div class="flex flex-col gap-20 p-8">
+      <!-- Planning Info -->
+      <div>
+        <h2 class="text-lg font-medium uppercase mb-4">Planning Info</h2>
+        <calendar-form v-model="form" />
+      </div>
+
+      <!-- Employees Overview -->
+      <div>
+        <h2 class="text-lg font-medium uppercase mb-4">Employees Overview</h2>
+        <ul v-if="form.employees.length" class="flex flex-col">
+          <li
+            v-for="(employee, i) in form.employees"
+            :key="employee"
+            class="flex items-center justify-between gap-4 p-4 cursor-pointer"
+            :class="{ 'bg-slate-50': i % 2 === 0, 'bg-slate-100': i % 2 !== 0 }"
+            @click="toggleActiveEmployee(employee)"
+          >
+            {{ employee }}
+            <span class="text-xs bg-black text-white px-2 py-1 rounded-full">
+              {{ employee === activeEmployee ? 'Active' : 'Inactive' }}
+            </span>
+          </li>
+        </ul>
+        <p v-else>No employees have been added yet. Please add employees to start planning.</p>
+      </div>
+
+      <!-- Day Details -->
+      <div v-if="activeDay">
+        <h2 class="text-lg font-medium uppercase mb-4">Day Details</h2>
+        <pre>{{ activeDay }}</pre>
+        <DayForm v-model="activeDay" :employees="form.employees" />
+      </div>
+
+      <button
+        type="button"
+        @click="calculatePlanning"
+        class="flex items-center justify-center w-full py-3 bg-black text-white uppercase text-sm tracking-wider font-medium"
+      >
+        Calculate Planning
+      </button>
     </div>
 
+    <!-- Calendar -->
     <div class="col-span-2 grid grid-cols-7">
       <div
         v-for="day in DAYS_OF_THE_WEEK"
@@ -15,34 +54,39 @@
       </div>
 
       <calendar-day
-        v-for="day in month"
+        v-for="day in planning"
         :key="day.dayNumber"
         :day="day"
         :days-of-the-week="DAYS_OF_THE_WEEK"
-        :active-user="activeUser"
+        :active-employee="activeEmployee"
+        :active-day="activeDay"
         :employees="form.employees"
-        @selected-day="toggleActiveUserWorkday"
+        @selected-day="setActiveDay"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 
 import CalendarDay from '@/components/CalendarDay.vue'
 import CalendarForm from '@/components/CalendarForm.vue'
 import { DAYS_OF_THE_WEEK } from '@/utils/constants'
+import DayForm from './components/DayForm.vue'
 
 const form = reactive({
   // Default value for input[type="month"]
-  // Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 10
-  datepicker: `${new Date().getFullYear()}-${new Date().getMonth() < 10 ? '0' + (new Date().getMonth() + 1) : new Date().getMonth() + 1}`,
-  slots: 4,
+  // Default format is YYYY-MM and we need to add a leading zero to the month if it's less than 9
+  datepicker: `${new Date().getFullYear()}-${new Date().getMonth() < 9 ? '0' : ''}${new Date().getMonth() + 1}`,
   employees: []
 })
-const refreshTable = ref(0)
-const activeUser = ref(null)
+
+const activeEmployee = ref(null)
+const activeDay = ref(null)
+
+const planning = ref([])
+const fullEmployees = ref([])
 
 // Get the days of the selected month.
 const days = computed(() => {
@@ -57,77 +101,65 @@ const days = computed(() => {
   return days
 })
 
-// Create a new array of objects with the days of the month and the employees working on that day.
-// This is the main function that calculates the planning
-const month = computed(() => {
-  const planning = []
-  refreshTable.value
+const setActiveDay = (day) => {
+  // Toggle active day
+  if (activeDay.value && activeDay.value.date === day.date) {
+    activeDay.value = null
+  } else {
+    activeDay.value = day
+  }
 
-  // Use spread operator to create a new array and not mutate the original one
-  const partTimeEmployees = form.employees.filter((employee) => employee.workDays.length > 0)
-  const fullTimeEmployees = form.employees.filter((employee) => !employee.workDays.length)
+  // Toggle active user in employeesNotWorking
+  if (!activeEmployee.value) return
+  if (day.employeesNotWorking.includes(activeEmployee.value)) {
+    day.employeesNotWorking = day.employeesNotWorking.filter(
+      (employee) => employee !== activeEmployee.value
+    )
+  } else {
+    day.employeesNotWorking.push(activeEmployee.value)
+  }
+}
 
-  days.value.map((d) => {
+const toggleActiveEmployee = (employee) => {
+  if (activeEmployee.value === employee) {
+    activeEmployee.value = null
+  } else {
+    activeEmployee.value = employee
+  }
+}
+
+const calculatePlanning = () => {
+  planning.value = days.value.map((d, i) => {
     const day = {
+      date: d,
       dayNumber: d.getDate(),
-      employees: [],
+      employeesNotWorking: [],
       dayOfTheWeek: d.getDay(),
       isSunday: d.getDay() % 7 === 0,
-      isWeekend: d.getDay() % 6 === 0 || d.getDay() % 7 === 0
+      isWeekend: d.getDay() % 6 === 0 || d.getDay() % 7 === 0,
+      ob: null
     }
 
-    if (day.isSunday && day.dayNumber > 1) {
-      // Copy the employees from saturday to sunday.
-      // Sunday must have the same employees as Saturday
-      day.employees = [...planning[day.dayNumber - 2].employees]
-    } else {
-      // Part-time employees are added first to the planning
-      // Shuffle the array of full-time employees to make the result more random
-      const shuffledEmployees = [...partTimeEmployees, ...shuffle(fullTimeEmployees)]
+    if (!form.employees.length) return day
 
-      shuffledEmployees.map((employee) => {
-        let isWorking = false
+    day.ob = form.employees[day.dayNumber % form.employees.length]
 
-        // If an employee has a holiday, skip him
-        if (employee.holidays.includes(day.dayNumber)) {
-          return
-        }
+    console.log(day)
 
-        // Calculate the average working days for employees
-        const averageWorkingDays = Math.ceil(
-          (days.value.length * form.slots - totalPartTimeWorkingDays.value) /
-            fullTimeEmployees.length
-        )
-
-        // Make sure a full-time employee doesn't work more days than the average
-        isWorking =
-          planning.filter((d) => d.employees.includes(employee.name)).length < averageWorkingDays
-
-        // First check if employee has workDays because this is only for part-time employees.
-        // Then check if the current day is included in the workDays
-        if (employee.workDays.length > 0) {
-          if (employee.workDays.includes(day.dayNumber)) {
-            isWorking = true
-          } else {
-            isWorking = false
-          }
-        }
-
-        // If the day is a weekend, only add 4 employees
-        if (
-          day.employees.length < (day.isWeekend ? 4 : form.slots) &&
-          !day.employees.includes(employee.name) &&
-          isWorking
-        ) {
-          day.employees.push(employee.name)
-        }
-      })
+    // Sunday ob is always te same as the previous day
+    if (day.isSunday) {
+      day.ob = planning.value[i - 1].ob
     }
-
-    planning.push(day)
   })
 
-  return planning
+  console.log(planning.value)
+}
+
+watch(form.employees, () => {
+  fullEmployees.value = form.employees
 })
 
+onMounted(() => {
+  calculatePlanning()
+})
 </script>

@@ -9,12 +9,9 @@
         lang="nl"
         v-model="model.datepicker"
         class="w-full"
+        required
+        pattern="[0-9]{4}-[0-9]{2}"
       />
-    </div>
-
-    <div class="flex items-center gap-4 mb-4">
-      <label for="slots" class="flex-shrink-0"># of shifts:</label>
-      <input type="number" id="slots" name="slots" v-model="model.slots" class="w-full" />
     </div>
 
     <div class="flex items-center gap-4 mb-4">
@@ -25,22 +22,12 @@
         :multiple="true"
         :close-on-select="false"
         :taggable="true"
-        @tag="addEmployee"
+        @tag="handleEmployee"
         tag-placeholder="Add to employees"
         placeholder="Type to add employee"
         id="employees"
-        label="name"
-        track-by="name"
       ></multiselect>
     </div>
-
-    <button
-      type="button"
-      @click="emit('calculate')"
-      class="flex items-center justify-center w-full py-3 bg-black text-white uppercase text-sm tracking-wider font-medium"
-    >
-      Calculate
-    </button>
   </form>
 </template>
 
@@ -48,21 +35,13 @@
 import Multiselect from 'vue-multiselect'
 import { ref } from 'vue'
 
-const emit = defineEmits(['calculate'])
-
 const model = defineModel()
 const options = ref([])
 
-const addEmployee = (newEmployee) => {
-  model.value.employees.push({
-    name: newEmployee,
-    workDays: [],
-    holidays: []
-  })
-  options.value.push({
-    name: newEmployee,
-    workDays: [],
-    holidays: []
-  })
+const handleEmployee = (employee) => {
+  if (!options.value.find((option) => option === employee)) {
+    options.value.push(employee)
+    model.value.employees.push(employee)
+  }
 }
 </script>
